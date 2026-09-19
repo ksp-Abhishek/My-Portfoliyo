@@ -139,63 +139,113 @@ function updateActiveNavLink() {
 window.addEventListener('scroll', updateActiveNavLink);
 
 // Typing Animation for Hero Title
-function typeWriter() {
+function initTypeWriter() {
     const greetingElement = document.querySelector('.hero-title .greeting');
     const nameElement = document.querySelector('.hero-title .name');
     const professionElement = document.querySelector('.hero-title .profession');
+    const cursorElement = document.querySelector('.typing-cursor');
+    const greetingWrapper = document.querySelector('.hero-title .greeting-wrapper');
+    const nameWrapper = document.querySelector('.hero-title .name-wrapper');
+    const professionWrapper = document.querySelector('.hero-title .profession-wrapper');
     
     if (!greetingElement || !nameElement || !professionElement) return;
     
     const greetingText = "Hello, I'm";
     const nameText = "Abhishek Kashyap";
-    const professionText = "Java Developer";
+    const roles = [
+        "Java Developer",
+        "Spring Boot Developer",
+        "Full Stack Developer",
+        "Backend Developer"
+    ];
     
-    let charIndex = 0;
-    let elementIndex = 0;
-    
-    function type() {
-        if (elementIndex === 0) {
-            // Type greeting
-            if (charIndex < greetingText.length) {
-                greetingElement.textContent += greetingText.charAt(charIndex);
-                charIndex++;
-                setTimeout(type, 80);
-            } else {
-                charIndex = 0;
-                elementIndex = 1;
-                setTimeout(type, 500);
-            }
-        } else if (elementIndex === 1) {
-            // Type name
-            if (charIndex < nameText.length) {
-                nameElement.textContent += nameText.charAt(charIndex);
-                charIndex++;
-                setTimeout(type, 60);
-            } else {
-                charIndex = 0;
-                elementIndex = 2;
-                setTimeout(type, 500);
-            }
-        } else if (elementIndex === 2) {
-            // Type profession
-            if (charIndex < professionText.length) {
-                professionElement.textContent += professionText.charAt(charIndex);
-                charIndex++;
-                setTimeout(type, 80);
-            }
-        }
-    }
-    
-    // Clear elements and start typing
+    // Clear elements initially
     greetingElement.textContent = '';
     nameElement.textContent = '';
     professionElement.textContent = '';
     
-    setTimeout(type, 1000);
+    // Place cursor initially in greeting wrapper
+    if (cursorElement && greetingWrapper) {
+        greetingWrapper.appendChild(cursorElement);
+    }
+    
+    let charIndex = 0;
+    
+    // Step 1: Type Greeting ("Hello, I'm")
+    function typeGreeting() {
+        if (charIndex < greetingText.length) {
+            greetingElement.textContent += greetingText.charAt(charIndex);
+            charIndex++;
+            setTimeout(typeGreeting, 70);
+        } else {
+            charIndex = 0;
+            // Move cursor to name
+            if (cursorElement && nameWrapper) {
+                nameWrapper.appendChild(cursorElement);
+            }
+            setTimeout(typeName, 300);
+        }
+    }
+    
+    // Step 2: Type Name ("Abhishek Kashyap")
+    function typeName() {
+        if (charIndex < nameText.length) {
+            nameElement.textContent += nameText.charAt(charIndex);
+            charIndex++;
+            setTimeout(typeName, 80);
+        } else {
+            charIndex = 0;
+            // Move cursor to profession
+            if (cursorElement && professionWrapper) {
+                professionWrapper.appendChild(cursorElement);
+            }
+            setTimeout(typeProfession, 400);
+        }
+    }
+    
+    // Step 3: Type & Cycle Professions
+    let roleIndex = 0;
+    let isDeleting = false;
+    
+    function typeProfession() {
+        const currentRole = roles[roleIndex];
+        
+        if (!isDeleting) {
+            // Typing forward
+            professionElement.textContent = currentRole.substring(0, charIndex + 1);
+            charIndex++;
+            
+            if (charIndex === currentRole.length) {
+                isDeleting = true;
+                setTimeout(typeProfession, 2200);
+                return;
+            }
+            setTimeout(typeProfession, 75);
+        } else {
+            // Deleting backward
+            professionElement.textContent = currentRole.substring(0, charIndex - 1);
+            charIndex--;
+            
+            if (charIndex === 0) {
+                isDeleting = false;
+                roleIndex = (roleIndex + 1) % roles.length;
+                setTimeout(typeProfession, 350);
+                return;
+            }
+            setTimeout(typeProfession, 40);
+        }
+    }
+    
+    // Start typing sequence
+    setTimeout(typeGreeting, 250);
 }
 
-// Initialize typing animation
-document.addEventListener('DOMContentLoaded', typeWriter);
+// Initialize typing animation when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTypeWriter);
+} else {
+    initTypeWriter();
+}
 
 // Parallax Effect for Hero Section
 window.addEventListener('scroll', () => {
@@ -208,46 +258,6 @@ window.addEventListener('scroll', () => {
         heroContent.style.transform = `translateY(${scrolled * 0.2}px)`;
     }
 });
-
-// Statistics Counter Animation
-function animateCounters() {
-    const counters = document.querySelectorAll('.stat-number');
-    
-    counters.forEach(counter => {
-        const target = counter.textContent;
-        const numericValue = parseInt(target.replace(/[^0-9]/g, ''));
-        const suffix = target.replace(/[0-9]/g, '');
-        let current = 0;
-        const increment = numericValue / 100;
-        
-        const updateCounter = () => {
-            if (current < numericValue) {
-                current += increment;
-                counter.textContent = Math.ceil(current) + suffix;
-                setTimeout(updateCounter, 20);
-            } else {
-                counter.textContent = target;
-            }
-        };
-        
-        updateCounter();
-    });
-}
-
-// Trigger counter animation when stats are in view
-const statsContainer = document.querySelector('.stats-container');
-const statsObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            animateCounters();
-            statsObserver.unobserve(entry.target);
-        }
-    });
-}, { threshold: 0.5 });
-
-if (statsContainer) {
-    statsObserver.observe(statsContainer);
-}
 
 // Portfolio Item Hover Effects
 const portfolioItems = document.querySelectorAll('.portfolio-item');
@@ -414,16 +424,6 @@ window.addEventListener('scroll', debounce(() => {
     updateActiveNavLink();
     reveal();
 }, 10));
-
-// Page Load Animation
-window.addEventListener('load', () => {
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.8s ease';
-    
-    setTimeout(() => {
-        document.body.style.opacity = '1';
-    }, 100);
-});
 
 // Console Welcome Message
 console.log('%c Welcome to Abhishek Kashyap\'s Dark Portfolio! ', 'background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 16px; font-weight: bold; padding: 10px; border-radius: 5px;');
